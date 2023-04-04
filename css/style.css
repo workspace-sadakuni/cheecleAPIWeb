@@ -1,0 +1,33 @@
+@charset "UTF-8";
+
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  width: 90%;
+  margin: auto;
+}
+
+.container2 {
+  width: 85%;
+  margin: auto;
+}
+
+.key-container {
+  display: flex;
+}
+
+.key-container-right {
+  margin-left: 20px;
+}
+
+.create-key-btn {
+  margin-top: 15%;
+}
+
+.error-message {
+  color: red;
+}

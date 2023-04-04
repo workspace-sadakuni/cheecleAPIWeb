@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="./css/style.css">
+  <title>cheecleAPIWeb</title>
+</head>
+
+<body>
+
+  <div class="container">
+    <h4>API利用企業登録</h4>
+  </div>
+  <div class="container2">
+    <form id="companyForm">
+      <label for="companyName">企業名:</label>
+      <input id="companyName" name="companyName" type="text" value="">
+      <span id="companyNameMessage" class="error-message"></span><br>
+
+      <label for="accountId">アカウントID:</label>
+      <input id="accountId" name="accountId" type="text" placeholder="1" value="">
+      <span id="accountIdMessage" class="error-message"></span><br>
+
+      <div class="key-container">
+        <div class="key-container-left">
+          <label for="apiKey">APIキー:</label>
+          <span id="apiKey"></span><br>
+          <label for="secretKey">シークレットキー:</label>
+          <span id="secretKey"></span>
+        </div>
+        <div class="key-container-right">
+          <button class="create-key-btn" type="button" onclick="createKey();">キー変更</button><br>
+        </div>
+      </div>
+
+      <label for="startDate">利用開始日:</label>
+      <input id="startDate" name="startDate" type="datetime-local">
+      <span id="startDateMessage" class="error-message"></span><br>
+
+      <label for="endDate">利用終了日:</label>
+      <input id="endDate" name="endDate" type="datetime-local">
+      <span id="endDateMessage" class="error-message"></span><br>
+
+      <input type="submit" value="登録">
+    </form>
+  </div>
+
+  <script>
+    function createKey() {
+        const S = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+        const apiKey = document.getElementById('apiKey');
+        apiKey.innerText = Array.from(crypto.getRandomValues(new Uint32Array(30))).map((v) => S[v % S.length]).join('')
+
+        const secretKey = document.getElementById('secretKey');
+        secretKey.innerText = Array.from(crypto.getRandomValues(new Uint32Array(30))).map((v) => S[v % S.length]).join('')
+    }
+
+    window.addEventListener("load", () => {
+      createKey();
+
+      function validationForm(companyName, accountId, startDate, endDate) {
+        let validationFlg = false
+
+        const companyNameMessage = document.getElementById('companyNameMessage');
+        companyNameMessage.innerText = ''
+
+        const accountIdMessage = document.getElementById('accountIdMessage');
+        accountIdMessage.innerText = ''
+
+        const startDateMessage = document.getElementById('startDateMessage');
+        startDateMessage.innerText = ''
+
+        const endDateMessage = document.getElementById('endDateMessage');
+        endDateMessage.innerText = ''
+
+        if (!companyName.value) {
+          companyNameErrorMessage = '企業名は必須項目です。'
+          companyNameMessage.innerText = companyNameErrorMessage
+          validationFlg = true
+        } if (!accountId.value) {
+          accountIdErrorMessage = 'アカウントIDは必須項目です。'
+          accountIdMessage.innerText = accountIdErrorMessage
+          validationFlg = true
+        } if (!startDate.value) {
+          startDateErrorMessage = '利用開始日は必須項目です。'
+          startDateMessage.innerText = startDateErrorMessage
+          validationFlg = true
+        } if (!endDate.value) {
+          endDateErrorMessage = '利用終了日は必須項目です。'
+          endDateMessage.innerText = endDateErrorMessage
+          validationFlg = true
+        }
+
+        return validationFlg
+      }
+
+      function sendData(companyName, accountId, startDate, endDate, apiKey, secretKey) {
+        const XHR = new XMLHttpRequest();
+
+        // FormData オブジェクトと form 要素を紐づけます
+        // const FD = new FormData(form);
+
+        // データが正常に送信された場合に行うことを定義します
+        XHR.addEventListener("load", (event) => {
+          if(XHR.status === 400) {
+            res = JSON.parse(XHR.response)
+            if(res.error_message === 'DuplicateError') {
+              const accountIdMessage = document.getElementById('accountIdMessage');
+              accountIdMessage.innerText = '既に存在するアカウントIDは登録できません。'
+            }
+          } else if(XHR.status === 200) {
+            alert('企業情報を登録しました。');
+          }
+        });
+
+        // エラーが発生した場合に行うことを定義します
+        XHR.addEventListener("error", (event) => {
+          console.log(event)
+          alert('企業情報の登録ができませんでした。');
+        });
+
+        // リクエストをセットアップします
+        XHR.open("POST", "https://6b5pkase41.execute-api.ap-northeast-1.amazonaws.com/dev/create-company");
+
+        // XHR.setRequestHeader('Access-Control-Allow-Origin', '*');
+        // XHR.setRequestHeader('Access-Control-Allow-Headers', 'Content-Type');
+        // XHR.setRequestHeader('Content-Type', 'application/json');
+
+        let requestData = {
+          'company_name': companyName.value,
+          'account_id': accountId.value,
+          'api_key': apiKey,
+          'secret_key': secretKey,
+          'start_datetime': startDate.value,
+          'end_datetime': endDate.value
+        }
+
+        // 送信したデータは、ユーザーがフォームで提供したものです
+        XHR.send(JSON.stringify(requestData));
+      }
+
+      // form 要素を取得
+      const form = document.getElementById("companyForm");
+
+      // 'submit' イベントのハンドラーを追加
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        
+        const companyName = document.getElementById('companyName');
+        const accountId = document.getElementById('accountId');
+        const startDate = document.getElementById('startDate');
+        const endDate = document.getElementById('endDate');
+        const apiKey = document.getElementById('apiKey');
+        const secretKey = document.getElementById('secretKey');
+
+        let validationFlg = validationForm(companyName, accountId, startDate, endDate);
+        if (!validationFlg) {
+          sendData(companyName, accountId, startDate, endDate, apiKey.innerText, secretKey.innerText);
+        } 
+      });
+    });
+  </script>
+
+</body>
+
+</html>
